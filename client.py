@@ -6,9 +6,9 @@ def create_client(app):
     oauth = OAuth(app)
 
     remote = oauth.remote_app(
-        'dev',
-        consumer_key='dev',
-        consumer_secret='dev',
+        'confidential',
+        consumer_key='confidential',
+        consumer_secret='confidential',
         request_token_params={'scope': 'email'},
         base_url='http://127.0.0.1:5000/api/',
         request_token_url=None,
@@ -19,7 +19,7 @@ def create_client(app):
 
     @app.route('/')
     def index():
-        if 'dev_token' in session:
+        if 'confidential_token' in session:
             ret = remote.get('email')
             return jsonify(ret.data)
         return redirect(url_for('login'))
@@ -30,7 +30,7 @@ def create_client(app):
 
     @app.route('/logout')
     def logout():
-        session.pop('dev_token', None)
+        session.pop('confidential_token', None)
         return redirect(url_for('index'))
 
     @app.route('/authorized')
@@ -41,13 +41,13 @@ def create_client(app):
                 request.args['error']
             )
         if isinstance(resp, dict) and 'access_token' in resp:
-            session['dev_token'] = (resp['access_token'], '')
+            session['confidential_token'] = (resp['access_token'], '')
             return jsonify(resp)
         return str(resp)
 
     @app.route('/client')
     def client_method():
-        if 'dev_token' in session:
+        if 'confidential_token' in session:
             ret = remote.get("client")
             if ret.status not in (200, 201):
                 return abort(ret.status)
@@ -56,7 +56,7 @@ def create_client(app):
 
     @app.route('/address')
     def address():
-        if 'dev_token' in session:
+        if 'confidential_token' in session:
             ret = remote.get('address/hangzhou')
             if ret.status not in (200, 201):
                 return ret.raw_data, ret.status
@@ -71,7 +71,7 @@ def create_client(app):
 
     @remote.tokengetter
     def get_oauth_token():
-        return session.get('dev_token')
+        return session.get('confidential_token')
 
     return remote
 
@@ -82,6 +82,6 @@ if __name__ == '__main__':
     # DEBUG=1 python oauth2_client.py
     app = Flask(__name__)
     app.debug = True
-    app.secret_key = 'development'
+    app.secret_key = 'confidential'
     create_client(app)
     app.run(host='localhost', port=8000)
