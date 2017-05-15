@@ -10,8 +10,9 @@
 """
 
 from flask_oauthlib.provider import OAuth2Provider
+from flask_login import current_user
 from . import db
-from .models import User, Token, Grant
+from .models import User, Token, Grant, Client
 from datetime import datetime, timedelta
 
 
@@ -42,7 +43,7 @@ def default_provider():
             code=code['code'],
             redirect_uri=request.redirect_uri,
             scope=' '.join(request.scopes),
-            user_id=g.user.id,
+            user_id=current_user.id,
             expires=expires,
         )
         db.session.add(grant)

@@ -19,11 +19,11 @@ __all__ = ['db', 'login_manager', 'oauth', 'create_app']
 
 
 db = SQLAlchemy()
+login_manager = LoginManager()
+login_manager.session_protection = 'strong'
 
 from .oauth2_provider import default_provider
 oauth = default_provider()
-login_manager = LoginManager()
-login_manager.session_protection = 'strong'
 
 
 def create_app(config_name):

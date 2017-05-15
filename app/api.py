@@ -9,7 +9,11 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Blueprint, redirect, url_for, jsonify, make_response
+from flask import Blueprint, redirect, url_for, jsonify, make_response, request, \
+                render_template, current_app
+from flask_login import login_user, logout_user, \
+     login_required, current_user
+from flask_principal import Principal, Identity, AnonymousIdentity, identity_changed                     
 from . import oauth
 from .models import User
 
@@ -17,9 +21,10 @@ from .models import User
 api = Blueprint('api', __name__)
 
 
-@api.route('/authorize', methods=['GET', 'POST'])
+@api.route('/oauth/authorize', methods=['GET', 'POST'])
 @oauth.authorize_handler
 def authorize(*args, **kwargs):
+    print 'enter authorize'
     # NOTICE: for real project, you need to require login
     if request.method == 'GET':
         # render a page for user to confirm the authorization
@@ -36,7 +41,19 @@ def authorize(*args, **kwargs):
     username = request.form.get('username')
     password = str(request.form.get('password'))
     user = User.query.filter_by(username=username).first()
-    return user.check_password(password)
+    result = False
+    if user is not None and user.check_password(password):
+        login_user(user)
+        identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
+        result = True
+    return result
+
+
+@api.route('/xlogout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'result':'user logout'})
 
 
 @api.route('/oauth/token', methods=['POST', 'GET'])

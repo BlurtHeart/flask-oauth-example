@@ -9,11 +9,13 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from . import db
+from . import db, login_manager
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
+from flask_login import UserMixin, AnonymousUserMixin
+from flask import abort
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40), unique=True, index=True,
                          nullable=False)
@@ -21,6 +23,14 @@ class User(db.Model):
 
     def check_password(self, password):
         return self.password == password
+
+
+class AnonymousUser(AnonymousUserMixin):
+    def can(self, permissions):
+        return False
+
+    def is_administrator(self):
+        return False
 
 
 class Client(db.Model):
@@ -125,3 +135,14 @@ class Token(db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
+
+
+login_manager.anonymous_user = AnonymousUser
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    abort(403)
